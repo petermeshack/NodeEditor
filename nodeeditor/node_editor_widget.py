@@ -2,11 +2,11 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
-from node_edge import Edge,EDGE_TYPE_BEZIER
-from node_node import Node
-from node_scene import Scene
+from nodeeditor.node_edge import Edge,EDGE_TYPE_BEZIER
+from nodeeditor.node_node import Node
+from nodeeditor.node_scene import Scene
 
-from node_graphics_view import QDMGraphicsView
+from nodeeditor.node_graphics_view import QDMGraphicsView
 
 DEBUG = True
 

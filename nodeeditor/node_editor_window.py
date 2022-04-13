@@ -5,7 +5,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
-from node_editor_widget import NodeEditorWidget
+from nodeeditor.node_editor_widget import NodeEditorWidget
 
 
 class NodeEditorWindow(QMainWindow):

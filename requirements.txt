@@ -1,8 +1,4 @@
-asgiref==3.4.1
-PyQt5==5.15.4
+PyQt5==5.15.6
 PyQt5-Qt5==5.15.2
-PyQt5-sip==12.9.0
-pytube3==9.6.4
-pytz==2021.3
-sqlparse==0.4.2
-typing-extensions==3.10.0.2
+PyQt5-sip==12.10.1
+

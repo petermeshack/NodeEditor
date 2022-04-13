@@ -2,7 +2,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from collections import OrderedDict
-from node_serializable import Serializable
+from nodeeditor.node_serializable import Serializable
 
 
 class QDMNodeContentWidget(QWidget, Serializable):
