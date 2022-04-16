@@ -10,7 +10,7 @@ from nodeeditor.node_graphics_socket import QDMGraphicsSocket
 MODE_NOOP = 1
 MODE_EDGE_DRAG = 2
 MODE_EDGE_CUT = 3
-EDGE_DRAG_START_THRESHOLD = 10
+EDGE_DRAG_START_THRESHOLD = 50
 
 DEBUG = True
 

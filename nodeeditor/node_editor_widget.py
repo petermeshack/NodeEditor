@@ -1,3 +1,5 @@
+import os
+
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
@@ -15,8 +17,8 @@ class NodeEditorWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.stylesheet_filename = 'qss/nodestyle.qss'
-        self.loadStylesheet(self.stylesheet_filename)
+        self.filename = None
+
         self.initUI()
 
     def initUI(self):
@@ -33,7 +35,15 @@ class NodeEditorWidget(QWidget):
         self.view = QDMGraphicsView(self.scene.grScene, self)
         self.layout.addWidget(self.view)
 
+    def isModified(self):
+        return self.scene.has_been_modified
 
+    def isFilenameSet(self):
+        return self.filename is not None
+
+    def getUserFriendlyFilename(self):
+        name = os.path.basename(self.filename) if self.isFilenameSet() else "Untitled Graph"
+        return name + ("*" if self.isModified() else "")
 
     def addNodes(self):
         node = Node(self.scene, "My new Node ", inputs=[0, 1, 6], outputs=[1])
@@ -47,9 +57,4 @@ class NodeEditorWidget(QWidget):
         edge1 = Edge(self.scene, node.outputs[0], node1.inputs[0], edge_type=EDGE_TYPE_BEZIER)
         edge2 = Edge(self.scene, node1.outputs[0], node2.inputs[2], edge_type=EDGE_TYPE_BEZIER)
 
-    def loadStylesheet(self, filename):
-        if DEBUG: print("STYLE loading:", filename)
-        file = QFile(filename)
-        file.open(QFile.ReadOnly | QFile.Text)
-        stylesheet = file.readAll()
-        QApplication.instance().setStyleSheet(str(stylesheet, encoding='utf8'))
+
