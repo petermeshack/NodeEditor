@@ -55,6 +55,13 @@ class Socket(Serializable):
 
     # def hasEdge(self):
     #     return self.edges is not None
+    def determineMultiEdges(self,data):
+        if 'multi_edges' in data:
+            return data['multi_edges']
+        else:
+            # OLDER VERSION OF FILE
+            return data['position'] in (RIGHT_TOP ,RIGHT_BOTTOM)
+
 
     def serialize(self):
         return OrderedDict([
@@ -67,6 +74,6 @@ class Socket(Serializable):
 
     def deserialize(self, data, hashmap={}, restore_id=True):
         if restore_id: self.id = data["id"]
-        self.is_multi_edges = data['multi_edges']
+        self.is_multi_edges =self.determineMultiEdges(data)
         hashmap[data["id"]] = self
         return True

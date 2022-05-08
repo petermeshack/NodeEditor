@@ -6,6 +6,9 @@ from PyQt5.QtWidgets import *
 
 
 class QDMGraphicsScene(QGraphicsScene):
+    itemSelected = pyqtSignal()
+    itemsDeselected = pyqtSignal()
+
     def __init__(self,scene, parent=None):
         super().__init__(parent)
 
@@ -29,7 +32,9 @@ class QDMGraphicsScene(QGraphicsScene):
 
         self.setBackgroundBrush(self.color_background)
 
-
+    # drag event wount be allowed until drag event is overridden
+    def dragMoveEvent(self, event):
+        pass
 
     def setGrScene(self,width,height):
         self.setSceneRect(-width // 2, -height // 2, width, height)

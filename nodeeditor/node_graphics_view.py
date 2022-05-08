@@ -12,7 +12,7 @@ MODE_EDGE_DRAG = 2
 MODE_EDGE_CUT = 3
 EDGE_DRAG_START_THRESHOLD = 50
 
-DEBUG = True
+DEBUG = False
 
 
 class QDMGraphicsView(QGraphicsView):
@@ -39,6 +39,10 @@ class QDMGraphicsView(QGraphicsView):
         self.cutline = QDMCutline()
         self.grScene.addItem(self.cutline)
 
+        # listeners
+        self._drag_enter_listeners = []
+        self._drop_listeners = []
+
     def initUI(self):
         self.setRenderHints(
             QPainter.Antialiasing | QPainter.HighQualityAntialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform)
@@ -50,6 +54,21 @@ class QDMGraphicsView(QGraphicsView):
         self.setTransformationAnchor(QDMGraphicsView.AnchorUnderMouse)
 
         self.setDragMode(QGraphicsView.RubberBandDrag)
+
+        # enable dropping
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event):
+        for callback in self._drag_enter_listeners: callback(event)
+
+    def dropEvent(self, event):
+        for callback in self._drop_listeners: callback(event)
+
+    def addDragEnterListener(self, callback):
+        self._drag_enter_listeners.append(callback)
+
+    def addDropListener(self, callback):
+        self._drop_listeners.append(callback)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MiddleButton:
@@ -156,10 +175,22 @@ class QDMGraphicsView(QGraphicsView):
             QApplication.setOverrideCursor(Qt.ArrowCursor)
             self.mode = MODE_NOOP
             return
-        # if self.dragMode() ==  QGraphicsView.RubberBandDrag:
+
         if self.rubberBandDraggingRectangle:
-            self.grScene.scene.history.storeHistory("Selection changed")
             self.rubberBandDraggingRectangle = False
+            current_selected_items = self.grScene.selectedItems()
+            if current_selected_items != self.grScene.scene._last_selected_items:
+                if current_selected_items == []:
+                    self.grScene.itemsDeselected.emit()
+                else:
+                    self.grScene.itemSelected.emit()
+                    self.grScene.scene._last_selected_items = current_selected_items
+
+            return
+
+        # otherwise deselect evrything
+        if item is None:
+            self.grScene.itemsDeselected.emit()
 
         super().mouseReleaseEvent(event)
 
@@ -209,9 +240,9 @@ class QDMGraphicsView(QGraphicsView):
             else:
                 super().keyPressEvent(event)
             # elif event.key() == Qt.Key_S and event.modifiers() & Qt.ControlModifier:
-            #     self.grScene.scene.saveToFile("graph.json01.text")
+            #     self.grScene.scene.saveToFile("01graph.json")
             # elif event.key() == Qt.Key_L and event.modifiers() & Qt.ControlModifier:
-            #     self.grScene.scene.loadFromFile("graph.json01.text")
+            #     self.grScene.scene.loadFromFile("01graph.json")
             # elif event.key() == Qt.Key_Z and event.modifiers() & Qt.ControlModifier and not event.modifiers() & Qt.ShiftModifier:
             #     self.grScene.scene.history.undo()
             # elif event.key() == Qt.Key_Z and event.modifiers() & Qt.ControlModifier and event.modifiers() & Qt.ShiftModifier:
@@ -343,4 +374,3 @@ class QDMGraphicsView(QGraphicsView):
         # set scene scale
         if not clamped or self.zoomClamp is False:
             self.scale(zoomFactor, zoomFactor)
-

@@ -98,7 +98,7 @@ class NodeEditorWindow(QMainWindow):
             event.ignore()
 
     def isModified(self):
-        return self.getCurrentNodeEditorWidget().scene.has_been_modified
+        return self.getCurrentNodeEditorWidget().scene.isModified()
 
     def getCurrentNodeEditorWidget(self):
         return self.centralWidget()
@@ -123,7 +123,7 @@ class NodeEditorWindow(QMainWindow):
     def onFileNew(self):
         if self.maybeSaved():
             self.getCurrentNodeEditorWidget().scene.clear()
-            self.filename = None
+            self.getCurrentNodeEditorWidget().filename = None
             self.setTitle()
 
     def onFileOpen(self):
@@ -132,56 +132,75 @@ class NodeEditorWindow(QMainWindow):
             if fname == '':
                 return
             if os.path.isfile(fname):
-                self.getCurrentNodeEditorWidget().scene.loadFromFile(fname)
-                self.filename = fname
-                self.setTitle()
+                self.getCurrentNodeEditorWidget().fileLoad(fname)
 
     def onFileSave(self):
-        if self.filename is None: return self.onFileSaveAs()
-        self.getCurrentNodeEditorWidget().scene.saveToFile(self.filename)
-        self.statusBar().showMessage("File saved Successfully as %s" % self.filename)
-        return True
+        current_nodeeditor =  self.getCurrentNodeEditorWidget()
+        if current_nodeeditor is not None:
+            if not current_nodeeditor.isFilenameSet(): return self.onFileSaveAs()
+
+            current_nodeeditor.fileSave()
+            self.statusBar().showMessage("File saved Successfully %s" % current_nodeeditor.filename, 5000)
+
+            # support for mdi application
+            if hasattr(current_nodeeditor, "setTitle"): current_nodeeditor.setTitle()
+            else:self.setTitle()
+            return True
+
 
     def onFileSaveAs(self):
-        fname, filter, = QFileDialog.getSaveFileName(self, "Save Graph to file")
-        if fname == '':
-            return False
-        self.filename = fname
-        self.onFileSave()
-        return True
+        current_nodeeditor =  self.getCurrentNodeEditorWidget()
+        if current_nodeeditor is not None:
+            fname, filter, = QFileDialog.getSaveFileName(self, "Save Graph to file")
+
+            if fname == '': return False
+            current_nodeeditor.fileSave(fname)
+            self.statusBar().showMessage("File saved Successfully as %s" % current_nodeeditor.filename, 5000)
+
+            # support for mdi application
+            if hasattr(current_nodeeditor, "setTitle"): current_nodeeditor.setTitle()
+            else:  self.setTitle()
+            return True
+
 
     def onEditUndo(self):
-        self.getCurrentNodeEditorWidget().scene.history.undo()
+        if self.getCurrentNodeEditorWidget():
+            self.getCurrentNodeEditorWidget().scene.history.undo()
 
     def onEditRedo(self):
-        self.getCurrentNodeEditorWidget().scene.history.redo()
+        if self.getCurrentNodeEditorWidget():
+            self.getCurrentNodeEditorWidget().scene.history.redo()
 
     def onEditDelete(self):
-        self.getCurrentNodeEditorWidget().scene.grScene.views()[0].deleteSelected()
+        if self.getCurrentNodeEditorWidget():
+            self.getCurrentNodeEditorWidget().scene.grScene.views()[0].deleteSelected()
 
     def onEditCut(self):
-        data = self.getCurrentNodeEditorWidget().scene.clipboard.serializeSelected(delete=True)
-        str_data = json.dumps(data, indent=4)
-        QApplication.instance().clipboard().setText(str_data)
+        if self.getCurrentNodeEditorWidget():
+            data = self.getCurrentNodeEditorWidget().scene.clipboard.serializeSelected(delete=True)
+            str_data = json.dumps(data, indent=4)
+            QApplication.instance().clipboard().setText(str_data)
 
     def onEditCopy(self):
-        data = self.getCurrentNodeEditorWidget().scene.clipboard.serializeSelected(delete=False)
-        str_data = json.dumps(data, indent=4)
-        QApplication.instance().clipboard().setText(str_data)
+        if self.getCurrentNodeEditorWidget():
+            data = self.getCurrentNodeEditorWidget().scene.clipboard.serializeSelected(delete=False)
+            str_data = json.dumps(data, indent=4)
+            QApplication.instance().clipboard().setText(str_data)
 
     def onEditPaste(self):
-        raw_data = QApplication.instance().clipboard().text()
-        try:
-            data = json.loads(raw_data)
-        except ValueError as e:
-            print("pasting of non valid json", e)
-            return
+        if self.getCurrentNodeEditorWidget():
+            raw_data = QApplication.instance().clipboard().text()
+            try:
+                data = json.loads(raw_data)
+            except ValueError as e:
+                print("pasting of non valid json", e)
+                return
 
-        # check if json data are correct
-        if 'nodes' not in data:
-            print("JSON doesnt contain nodes")
-            return
-        self.getCurrentNodeEditorWidget().scene.clipboard.deserializeFromClipboard(data)
+            # check if json data are correct
+            if 'nodes' not in data:
+                print("JSON doesnt contain nodes")
+                return
+            self.getCurrentNodeEditorWidget().scene.clipboard.deserializeFromClipboard(data)
 
     def readSettings(self):
         settings = QSettings(self.name_company, self.name_product)

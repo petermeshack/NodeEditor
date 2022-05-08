@@ -15,6 +15,21 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
         self.edge = edge
 
+        # init flags
+        self._last_selected_state = False
+
+        # init variables
+        self.posSource = [0, 0]
+        self.posDestination = [200, 100]
+
+        self.initAssets()
+        self.initUI()
+
+    def initUI(self):
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setZValue(-1)
+
+    def initAssets(self):
         self.color = QColor("#001000")
         self.color_selected = QColor("#00ff00")
         self._pen = QPen(self.color)
@@ -25,12 +40,16 @@ class QDMGraphicsEdge(QGraphicsPathItem):
         self._pen_selected.setWidthF(2.0)
         self._pen_dragging.setWidthF(2.0)
 
-        self.setFlag(QGraphicsItem.ItemIsSelectable)
+    def onSelected(self):
+        self.edge.scene.grScene.itemSelected.emit()
 
-        self.setZValue(-1)
 
-        self.posSource = [0, 0]
-        self.posDestination = [200, 100]
+    def mouseReleaseEvent(self, event):
+        super().mouseReleaseEvent(event)
+        if self._last_selected_state != self.isSelected():
+            self.edge.scene.resetLastSelectedStates()
+            self._last_selected_state = self.isSelected()
+            self.onSelected()
 
     def setSource(self, x, y):
         self.posSource = [x, y]
@@ -85,7 +104,8 @@ class QDMGraphicsEdgeBezier(QDMGraphicsEdge):
 
         if self.edge.start_socket is not None:
             sspos = self.edge.start_socket.position
-            if (s[0] > d[0] and sspos in (RIGHT_TOP, RIGHT_BOTTOM)) or (s[0] < d[0] and sspos in (LEFT_TOP, LEFT_BOTTOM)):
+            if (s[0] > d[0] and sspos in (RIGHT_TOP, RIGHT_BOTTOM)) or (
+                    s[0] < d[0] and sspos in (LEFT_TOP, LEFT_BOTTOM)):
                 cpx_d *= -1
                 cpx_s *= -1
 

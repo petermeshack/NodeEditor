@@ -1,4 +1,5 @@
 from nodeeditor.node_graphics_edge import QDMGraphicsEdge
+from nodeeditor.utils import dumpException
 
 DEBUG = False
 
@@ -7,27 +8,48 @@ class SceneHistory():
     def __init__(self, scene):
         self.scene = scene
 
+        self.clear()
+        self.histrory_limit = 32
+
+        self._history_modified_listeners = []
+
+    def clear(self):
         self.history_stack = []
         self.history_current_step = -1
-        self.histrory_limit = 32
+
+    def storeInitialHistoryStamp(self):
+        self.storeHistory("Innitial History Stamp")
+
+    def canUndo(self):
+        return self.history_current_step > 0
+
+    def canRedo(self):
+        return self.history_current_step +1 <len(self.history_stack)
 
     def undo(self):
         if DEBUG: print("UNDO")
-        if self.history_current_step > 0:
+        if self.canUndo():
             self.history_current_step -= 1
             self.restorHistory()
+            self.scene.has_been_modified = True
 
     def redo(self):
         if DEBUG: print("REDO")
-        if self.history_current_step +1 <len(self.history_stack):
+        if self.canRedo():
             self.history_current_step += 1
             self.restorHistory()
+            self.scene.has_been_modified = True
+
+    def addHistoryModifiedListener(self, callback):
+        self._history_modified_listeners.append(callback)
+
 
     def restorHistory(self):
         if DEBUG: print("RESTORING HISTORY",
                         " .... current step : @%d" % self.history_current_step,
                         "(%d)" % len(self.history_stack))
         self.restorHistoryStamp(self.history_stack[self.history_current_step])
+        for callback in self._history_modified_listeners:callback()
 
     def storeHistory(self, desk, setModified = False):
         if setModified:
@@ -51,6 +73,10 @@ class SceneHistory():
         self.history_current_step += 1
         if DEBUG: print(" -- seting step to", self.history_current_step)
 
+        # always trigger history modified (ie for updating menus)
+        for callback in self._history_modified_listeners:callback()
+
+
     def createHisroryStamp(self, desc):
         sel_obj = {
             'nodes':[],
@@ -72,15 +98,17 @@ class SceneHistory():
     def restorHistoryStamp(self, history_stamp):
         if DEBUG: print("RHS", history_stamp['desc'])
 
-        self.scene.deserialize(history_stamp['snapshot'])
-        # restore selection
-        for edge_id in history_stamp['selection']['edges']:
-            for edge in self.scene.edges:
-                if edge.id == edge_id:
-                    edge.grEdge.setSelected(True)
-                    break
-        for node_id in history_stamp['selection']['nodes']:
-            for node in self.scene.nodes:
-                if node.id == node_id:
-                    node.grNode.setSelected(True)
-                    break
+        try:
+            self.scene.deserialize(history_stamp['snapshot'])
+            # restore selection
+            for edge_id in history_stamp['selection']['edges']:
+                for edge in self.scene.edges:
+                    if edge.id == edge_id:
+                        edge.grEdge.setSelected(True)
+                        break
+            for node_id in history_stamp['selection']['nodes']:
+                for node in self.scene.nodes:
+                    if node.id == node_id:
+                        node.grNode.setSelected(True)
+                        break
+        except Exception as e:dumpException(e)
