@@ -3,8 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from calc_conf import *
 from nodeeditor.node_editor_widget import NodeEditorWidget
-from nodeeditor.node_node import Node
-
+from calc_node_base import *
 
 class CulculatorSubWindow(NodeEditorWidget):
     def __init__(self):
@@ -52,10 +51,8 @@ class CulculatorSubWindow(NodeEditorWidget):
             print("GOT DROP: [%d] '%s'" % (op_code,text), "mouse_position",mouse_position, "scene:",scene_position)
 
             # @TODO Fix Here
-            node = Node(self.scene, text, inputs=[1,1], outputs=[2])
+            node = CalcNode(self.scene,op_code, text, inputs=[1,1], outputs=[2])
             node.setPos(scene_position.x(),scene_position.y())
-            self.scene.addNode(node)
-            #self.scene.history.storeInitialHistoryStamp()
 
 
             event.setDropAction(Qt.MoveAction)
